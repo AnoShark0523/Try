@@ -14,11 +14,17 @@
   <nav>
     <a id="nav-home" onclick="navigate('home')">首页</a>
     <a id="nav-jobs" onclick="navigate('jobs')">岗位大厅</a>
-    <a id="nav-publish" onclick="navigate('publish')">发布岗位</a>
-    <a id="nav-applications" onclick="navigate('applications')">投递管理</a>
-    <a id="nav-orders" onclick="navigate('orders')">订单管理</a>
+    <a id="nav-publish" onclick="navigate('publish')" style="display:none">发布岗位</a>
+    <a id="nav-applications" onclick="navigate('applications')" style="display:none">投递管理</a>
+    <a id="nav-orders" onclick="navigate('orders')" style="display:none">订单管理</a>
+    <a id="nav-merchant" onclick="navigate('merchant')" style="display:none">商家面板</a>
     <a id="nav-agent" onclick="navigate('agent')">Agent面板</a>
-    <a id="nav-profile" onclick="navigate('profile')">我的</a>
+    <a id="nav-notifications" onclick="navigate('notifications')" style="position:relative;display:none">通知
+      <span id="notif-badge" style="display:none;position:absolute;top:-2px;right:-8px;background:var(--danger);color:#fff;font-size:10px;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;font-weight:700"></span>
+    </a>
+    <a id="nav-profile" onclick="navigate('profile')" style="display:none">我的</a>
+    <a id="nav-login" onclick="navigate('login')">登录/注册</a>
+    <a id="nav-logout" onclick="logout()" style="display:none">退出</a>
   </nav>
 </div>
 
@@ -32,15 +38,13 @@
         <p>对接在校大学生与周边商家周末短期用工需求，解决商家用工信息分散、供需匹配效率低的痛点</p>
         <div class="hero-actions">
           <a class="btn-solid" onclick="navigate('jobs')">浏览岗位</a>
-          <a class="btn-light" onclick="navigate('publish')">我是商家，发布岗位</a>
+          <a class="btn-light" onclick="navigate('login')">我是商家，发布岗位</a>
         </div>
       </div>
       <div class="hero-illust">💼</div>
     </div>
-
     <div class="section-title">岗位分类</div>
     <div class="category-grid" id="category-grid"></div>
-
     <div class="section-title">热门岗位</div>
     <div class="job-grid" id="hot-jobs"></div>
   </div>
@@ -76,6 +80,90 @@
     <div id="detail-content"></div>
   </div>
 
+  <!-- ========== 登录 ========== -->
+  <div id="page-login" class="page">
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <div class="auth-tab active" onclick="switchAuthTab('login',this)">登录</div>
+        <div class="auth-tab" onclick="switchAuthTab('register',this)">注册</div>
+      </div>
+      <!-- Login Form -->
+      <div id="login-form" class="auth-form">
+        <div class="form-group">
+          <label>手机号</label>
+          <input id="login-phone" placeholder="11位手机号" maxlength="11" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input id="login-password" type="password" placeholder="至少6位" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <div id="login-error" class="auth-error"></div>
+        <button class="btn-submit" style="width:100%" onclick="doLogin()">登录</button>
+        <div class="auth-hint">测试账号：学生 13800000001 / 商家 13900000001 （密码：123456）</div>
+      </div>
+      <!-- Register Form -->
+      <div id="register-form" class="auth-form" style="display:none">
+        <div class="form-group">
+          <label>手机号</label>
+          <input id="reg-phone" placeholder="11位手机号" maxlength="11">
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input id="reg-password" type="password" placeholder="至少6位">
+        </div>
+        <div class="form-group">
+          <label>确认密码</label>
+          <input id="reg-password2" type="password" placeholder="再次输入密码">
+        </div>
+        <div class="form-group">
+          <label>姓名</label>
+          <input id="reg-name" placeholder="真实姓名">
+        </div>
+        <div class="form-group">
+          <label>身份</label>
+          <div class="role-selector">
+            <label class="role-option">
+              <input type="radio" name="reg-role" value="student" onchange="toggleRegFields()" checked>
+              <span>🎓 学生</span>
+            </label>
+            <label class="role-option">
+              <input type="radio" name="reg-role" value="merchant" onchange="toggleRegFields()">
+              <span>🏪 商家</span>
+            </label>
+          </div>
+        </div>
+        <div id="reg-student-fields">
+          <div class="form-row">
+            <div class="form-group">
+              <label>学校</label>
+              <input id="reg-university" placeholder="如：华中科技大学">
+            </div>
+            <div class="form-group">
+              <label>专业</label>
+              <input id="reg-major" placeholder="如：计算机科学">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>年级</label>
+            <input id="reg-grade" placeholder="如：大三">
+          </div>
+        </div>
+        <div id="reg-merchant-fields" style="display:none">
+          <div class="form-group">
+            <label>商家名称</label>
+            <input id="reg-merchant-name" placeholder="如：蓝湾咖啡">
+          </div>
+          <div class="form-group">
+            <label>商家地址</label>
+            <input id="reg-merchant-addr" placeholder="如：大学城南路12号">
+          </div>
+        </div>
+        <div id="reg-error" class="auth-error"></div>
+        <button class="btn-submit" style="width:100%" onclick="doRegister()">注册并登录</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ========== 发布岗位 ========== -->
   <div id="page-publish" class="page">
     <div class="section-title">发布岗位 <span class="agent-badge">Agent辅助</span></div>
@@ -101,7 +189,7 @@
         </div>
         <div class="form-group">
           <label>薪资</label>
-          <input id="pub-salary" placeholder="如：120元/天">
+          <input id="pub-salary" placeholder="如：120元/天" oninput="onPublishInput()">
         </div>
       </div>
       <div class="form-row">
@@ -173,8 +261,28 @@
     <div class="section-title">订单管理</div>
     <div class="table-card">
       <table>
-        <thead><tr><th>订单号</th><th>岗位</th><th>商家</th><th>日期</th><th>工时</th><th>金额</th><th>状态</th></tr></thead>
+        <thead><tr><th>订单号</th><th>岗位</th><th>对方</th><th>日期</th><th>工时</th><th>金额</th><th>状态</th><th>评价</th></tr></thead>
         <tbody id="order-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ========== 商家面板 ========== -->
+  <div id="page-merchant" class="page">
+    <div class="section-title">商家管理面板</div>
+    <div class="agent-dashboard" id="merchant-stats"></div>
+    <div class="section-title" style="margin-top:24px">我的岗位</div>
+    <div class="table-card" style="margin-bottom:24px">
+      <table>
+        <thead><tr><th>岗位标题</th><th>薪资</th><th>状态</th><th>投递数</th></tr></thead>
+        <tbody id="merchant-job-tbody"></tbody>
+      </table>
+    </div>
+    <div class="section-title">待处理投递</div>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>学生</th><th>岗位</th><th>投递时间</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody id="merchant-app-tbody"></tbody>
       </table>
     </div>
   </div>
@@ -189,33 +297,71 @@
     </div>
   </div>
 
-  <!-- ========== 个人中心 ========== -->
-  <div id="page-profile" class="page">
-    <div class="profile-header">
-      <div class="profile-avatar">李</div>
-      <div class="profile-info">
-        <h2>李同学</h2>
-        <p style="color:var(--text-muted);font-size:14px">计算机科学与技术 · 大三 · 在校</p>
-        <div class="profile-tags">
-          <span class="profile-tag">周末空闲</span>
-          <span class="profile-tag">技术类优先</span>
-          <span class="profile-tag">距离≤3km</span>
-        </div>
-      </div>
-    </div>
-    <div class="section-title">我的兼职统计</div>
-    <div class="agent-dashboard">
-      <div class="agent-stat-card"><div class="stat-icon">📝</div><div class="stat-value">3</div><div class="stat-label">累计投递</div></div>
-      <div class="agent-stat-card"><div class="stat-icon">✅</div><div class="stat-value">2</div><div class="stat-label">成功录用</div></div>
-      <div class="agent-stat-card"><div class="stat-icon">💰</div><div class="stat-value">2,000</div><div class="stat-label">累计收入(元)</div></div>
-    </div>
+  <!-- ========== 通知 ========== -->
+  <div id="page-notifications" class="page">
+    <div class="section-title">消息通知</div>
+    <div id="notif-list"></div>
   </div>
 
+  <!-- ========== 个人中心 ========== -->
+  <div id="page-profile" class="page">
+    <div class="profile-header" id="profile-info"></div>
+    <div class="section-title">我的统计</div>
+    <div class="agent-dashboard" id="profile-stats"></div>
+    <div class="section-title">收到的评价</div>
+    <div id="profile-ratings"></div>
+  </div>
+
+</div>
+
+<!-- ========== Rating Modal ========== -->
+<div id="rating-modal" class="modal-overlay" style="display:none">
+  <div class="modal-card">
+    <h3>评价对方</h3>
+    <p style="color:var(--text-muted);font-size:14px;margin-bottom:16px">评价对象：<strong id="rating-to-name"></strong></p>
+    <div class="form-group">
+      <label>评分</label>
+      <div class="star-row">
+        <span id="star-1" class="star-btn" onclick="selectStar(this,1)">⭐</span>
+        <span id="star-2" class="star-btn" onclick="selectStar(this,2)">⭐</span>
+        <span id="star-3" class="star-btn" onclick="selectStar(this,3)">⭐</span>
+        <span id="star-4" class="star-btn" onclick="selectStar(this,4)">⭐</span>
+        <span id="star-5" class="star-btn" onclick="selectStar(this,5)">⭐</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>评价内容</label>
+      <textarea id="rating-content" placeholder="说说你的体验..." style="min-height:100px"></textarea>
+    </div>
+    <div class="form-footer">
+      <button class="btn-cancel" onclick="closeRatingModal()">取消</button>
+      <button class="btn-submit" onclick="submitRating()">提交评价</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Confirm Dialog ========== -->
+<div id="confirm-overlay" class="modal-overlay" style="display:none">
+  <div class="modal-card" style="max-width:400px">
+    <p id="confirm-msg" style="text-align:center;font-size:15px;margin:8px 0 20px"></p>
+    <div class="form-footer" style="justify-content:center">
+      <button class="btn-cancel" id="confirm-no">取消</button>
+      <button class="btn-submit" id="confirm-yes" style="background:var(--danger)">确认</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script src="assets/js/data.js"></script>
 <script src="assets/js/app.js"></script>
+<script>
+function switchAuthTab(tab, el) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('login-form').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('register-form').style.display = tab === 'register' ? '' : 'none';
+}
+</script>
 </body>
 </html>

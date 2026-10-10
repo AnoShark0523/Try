@@ -1,0 +1,23 @@
+# Build artifacts
+backend/build/
+*.exe
+*.o
+*.obj
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# IDE
+.vscode/
+.idea/
+*.user
+*.suo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
