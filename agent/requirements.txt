@@ -1,0 +1,7 @@
+# Agent 辅助模块依赖
+# 轻量化设计，仅依赖标准库 + sqlite3（Python自带）
+# 无需额外安装第三方包
+
+# 如需扩展为 LLM 增强版，可选安装：
+# openai>=1.0.0
+# sentence-transformers>=2.2.0

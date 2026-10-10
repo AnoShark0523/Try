@@ -4,50 +4,218 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>大学生周末兼职撮合平台</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: #f1f5f9; color: #1e293b; }
-  .hero { background: linear-gradient(135deg, #4F46E5, #3730A3); color: #fff; padding: 80px 24px; text-align: center; }
-  .hero h1 { font-size: 32px; margin-bottom: 12px; }
-  .hero p { font-size: 16px; opacity: 0.9; max-width: 600px; margin: 0 auto; }
-  .container { max-width: 1000px; margin: -40px auto 0; padding: 0 24px; position: relative; }
-  .card { background: #fff; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); padding: 32px; margin-bottom: 20px; }
-  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-  .cat { background: #f8fafc; border-radius: 8px; padding: 16px; text-align: center; }
-  .cat .icon { font-size: 28px; }
-  .cat .name { font-size: 13px; font-weight: 600; margin-top: 4px; }
-  .jobs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .job { border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; }
-  .job h3 { font-size: 15px; }
-  .job .salary { color: #10B981; font-weight: 700; }
-  footer { text-align: center; padding: 24px; color: #64748b; font-size: 13px; }
-</style>
+<link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-  <div class="hero">
-    <h1>🎓 大学生周末兼职撮合平台</h1>
-    <p>对接在校大学生与周边商家周末短期用工需求，解决商家用工信息分散、供需匹配效率低的痛点</p>
+
+<!-- ========== Navbar ========== -->
+<div class="navbar">
+  <div class="logo" onclick="navigate('home')">🎓 <span>周末兼职撮合</span></div>
+  <nav>
+    <a id="nav-home" onclick="navigate('home')">首页</a>
+    <a id="nav-jobs" onclick="navigate('jobs')">岗位大厅</a>
+    <a id="nav-publish" onclick="navigate('publish')">发布岗位</a>
+    <a id="nav-applications" onclick="navigate('applications')">投递管理</a>
+    <a id="nav-orders" onclick="navigate('orders')">订单管理</a>
+    <a id="nav-agent" onclick="navigate('agent')">Agent面板</a>
+    <a id="nav-profile" onclick="navigate('profile')">我的</a>
+  </nav>
+</div>
+
+<div class="container">
+
+  <!-- ========== 首页 ========== -->
+  <div id="page-home" class="page active">
+    <div class="hero">
+      <div>
+        <h1>大学生周末兼职撮合平台</h1>
+        <p>对接在校大学生与周边商家周末短期用工需求，解决商家用工信息分散、供需匹配效率低的痛点</p>
+        <div class="hero-actions">
+          <a class="btn-solid" onclick="navigate('jobs')">浏览岗位</a>
+          <a class="btn-light" onclick="navigate('publish')">我是商家，发布岗位</a>
+        </div>
+      </div>
+      <div class="hero-illust">💼</div>
+    </div>
+
+    <div class="section-title">岗位分类</div>
+    <div class="category-grid" id="category-grid"></div>
+
+    <div class="section-title">热门岗位</div>
+    <div class="job-grid" id="hot-jobs"></div>
   </div>
-  <div class="container">
-    <div class="card">
-      <h2 style="margin-bottom:16px">岗位分类</h2>
-      <div class="grid">
-        <div class="cat"><div class="icon">🍜</div><div class="name">餐饮服务</div></div>
-        <div class="cat"><div class="icon">🛍️</div><div class="name">零售导购</div></div>
-        <div class="cat"><div class="icon">🎪</div><div class="name">活动协助</div></div>
-        <div class="cat"><div class="icon">📚</div><div class="name">家教辅导</div></div>
+
+  <!-- ========== 岗位大厅 ========== -->
+  <div id="page-jobs" class="page">
+    <div class="section-title">岗位大厅</div>
+    <div class="filter-bar">
+      <div class="filter-group">
+        <input class="search-input" id="job-search" placeholder="搜索岗位名称、商家..." oninput="renderJobs()">
+      </div>
+      <div class="filter-group">
+        <label>分类</label>
+        <select id="filter-category" onchange="renderJobs()">
+          <option value="">全部</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>排序</label>
+        <select id="filter-sort" onchange="renderJobs()">
+          <option value="default">默认排序</option>
+          <option value="salary-desc">薪资高到低</option>
+          <option value="distance-asc">距离近到远</option>
+        </select>
+      </div>
+      <button class="btn-filter" onclick="renderJobs()">筛选</button>
+    </div>
+    <div class="job-grid" id="job-list"></div>
+  </div>
+
+  <!-- ========== 岗位详情 ========== -->
+  <div id="page-detail" class="page">
+    <div id="detail-content"></div>
+  </div>
+
+  <!-- ========== 发布岗位 ========== -->
+  <div id="page-publish" class="page">
+    <div class="section-title">发布岗位 <span class="agent-badge">Agent辅助</span></div>
+    <div class="form-card">
+      <div class="form-group">
+        <label>岗位标题 <span class="agent-badge">Agent可补全</span></label>
+        <input id="pub-title" placeholder="如：周末咖啡厅吧台助手" oninput="onPublishInput()">
+        <div class="agent-hint" id="hint-title" style="display:none"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>岗位分类</label>
+          <select id="pub-category">
+            <option value="餐饮服务">餐饮服务</option>
+            <option value="零售导购">零售导购</option>
+            <option value="活动协助">活动协助</option>
+            <option value="家教辅导">家教辅导</option>
+            <option value="配送物流">配送物流</option>
+            <option value="设计排版">设计排版</option>
+            <option value="技术支持">技术支持</option>
+            <option value="其他兼职">其他兼职</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>薪资</label>
+          <input id="pub-salary" placeholder="如：120元/天">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>工作地点</label>
+          <input id="pub-location" placeholder="如：大学城南区" oninput="onPublishInput()">
+          <div class="agent-hint" id="hint-location" style="display:none"></div>
+        </div>
+        <div class="form-group">
+          <label>招聘人数</label>
+          <input id="pub-headcount" type="number" value="1" min="1">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>工作时间</label>
+          <input id="pub-worktime" placeholder="如：周六、周日 9:00-17:00">
+        </div>
+        <div class="form-group">
+          <label>工作时长</label>
+          <input id="pub-duration" placeholder="如：8小时/天">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>岗位标签（逗号分隔）</label>
+        <input id="pub-tags" placeholder="如：包午餐,无经验可,就近分配" oninput="onPublishInput()">
+        <div class="agent-hint" id="hint-tags" style="display:none"></div>
+      </div>
+      <div class="form-group">
+        <label>岗位描述 <span class="agent-badge">Agent可补全</span></label>
+        <textarea id="pub-desc" placeholder="描述工作内容..." oninput="onPublishInput()"></textarea>
+        <div class="agent-hint" id="hint-desc" style="display:none"></div>
+      </div>
+      <div class="form-group">
+        <label>任职要求</label>
+        <textarea id="pub-requirement" placeholder="描述岗位要求..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>福利待遇</label>
+        <textarea id="pub-benefits" placeholder="描述福利待遇..."></textarea>
+      </div>
+      <div id="pub-violation" class="agent-hint" style="display:none; color: var(--danger);"></div>
+      <div class="form-footer">
+        <button class="btn-cancel" onclick="navigate('home')">取消</button>
+        <button class="btn-submit" onclick="submitJob()">发布岗位</button>
       </div>
     </div>
-    <div class="card">
-      <h2 style="margin-bottom:16px">热门岗位</h2>
-      <div class="jobs">
-        <div class="job"><h3>周末咖啡厅吧台助手</h3><p style="color:#64748b;font-size:13px;margin:4px 0">蓝湾咖啡 · 0.8km · 周六周日</p><p class="salary">120元/天</p></div>
-        <div class="job"><h3>商场导购员（急招）</h3><p style="color:#64748b;font-size:13px;margin:4px 0">万达广场 · 2.3km · 周六周日</p><p class="salary">150元/天</p></div>
-        <div class="job"><h3>小学英语家教</h3><p style="color:#64748b;font-size:13px;margin:4px 0">个人雇主 · 1.5km · 周六</p><p class="salary">80元/小时</p></div>
-        <div class="job"><h3>外卖配送骑手</h3><p style="color:#64748b;font-size:13px;margin:4px 0">美团专送 · 0.5km · 周六周日</p><p class="salary">200元/天</p></div>
-      </div>
+  </div>
+
+  <!-- ========== 投递管理 ========== -->
+  <div id="page-applications" class="page">
+    <div class="section-title">投递管理</div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchAppTab(this,'all')">全部</div>
+      <div class="tab" onclick="switchAppTab(this,'pending')">待处理</div>
+      <div class="tab" onclick="switchAppTab(this,'accepted')">已录用</div>
+      <div class="tab" onclick="switchAppTab(this,'completed')">已完成</div>
+    </div>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>岗位名称</th><th>商家</th><th>投递时间</th><th>状态</th></tr></thead>
+        <tbody id="app-tbody"></tbody>
+      </table>
     </div>
   </div>
-  <footer>大学生周末兼职撮合平台 · 部署于 GitHub Pages</footer>
+
+  <!-- ========== 订单管理 ========== -->
+  <div id="page-orders" class="page">
+    <div class="section-title">订单管理</div>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>订单号</th><th>岗位</th><th>商家</th><th>日期</th><th>工时</th><th>金额</th><th>状态</th></tr></thead>
+        <tbody id="order-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ========== Agent 面板 ========== -->
+  <div id="page-agent" class="page">
+    <div class="section-title">Agent 智能辅助面板</div>
+    <div class="agent-dashboard" id="agent-stats"></div>
+    <div class="agent-log">
+      <h3>📋 Agent 运行日志</h3>
+      <div id="agent-log-list"></div>
+    </div>
+  </div>
+
+  <!-- ========== 个人中心 ========== -->
+  <div id="page-profile" class="page">
+    <div class="profile-header">
+      <div class="profile-avatar">李</div>
+      <div class="profile-info">
+        <h2>李同学</h2>
+        <p style="color:var(--text-muted);font-size:14px">计算机科学与技术 · 大三 · 在校</p>
+        <div class="profile-tags">
+          <span class="profile-tag">周末空闲</span>
+          <span class="profile-tag">技术类优先</span>
+          <span class="profile-tag">距离≤3km</span>
+        </div>
+      </div>
+    </div>
+    <div class="section-title">我的兼职统计</div>
+    <div class="agent-dashboard">
+      <div class="agent-stat-card"><div class="stat-icon">📝</div><div class="stat-value">3</div><div class="stat-label">累计投递</div></div>
+      <div class="agent-stat-card"><div class="stat-icon">✅</div><div class="stat-value">2</div><div class="stat-label">成功录用</div></div>
+      <div class="agent-stat-card"><div class="stat-icon">💰</div><div class="stat-value">2,000</div><div class="stat-label">累计收入(元)</div></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
 </body>
 </html>
