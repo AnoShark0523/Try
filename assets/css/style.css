@@ -13,6 +13,7 @@
   --accent-pale: #FFF7ED;
   --secondary: #059669;
   --secondary-light: #34D399;
+  --secondary-pale: #D1FAE5;
   --danger: #DC2626;
   --danger-light: #FEE2E2;
   --warning: #D97706;
@@ -714,6 +715,47 @@ tr:hover td { background: var(--primary-pale); }
 .checkbox-pill:hover { border-color: var(--primary-light); }
 .checkbox-pill.checked { border-color: var(--primary); background: var(--primary-pale); color: var(--primary); }
 .checkbox-pill.checked::after { content: '✓'; margin-left: 4px; font-weight: 700; }
+
+/* ========== New Button Styles ========== */
+.btn-complete {
+  padding: 5px 14px; border-radius: var(--r-sm); background: var(--secondary); color: #fff;
+  border: none; font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all var(--dur-fast) var(--ease);
+}
+.btn-complete:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.btn-withdraw {
+  padding: 5px 14px; border-radius: var(--r-sm); background: var(--bg); color: var(--danger);
+  border: 1px solid var(--danger); font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all var(--dur-fast) var(--ease);
+}
+.btn-withdraw:hover { background: var(--danger); color: #fff; }
+
+.btn-withdraw-sm {
+  padding: 2px 10px; border-radius: 4px; background: transparent; color: var(--danger);
+  border: 1px solid var(--danger); font-size: 11px; font-weight: 600; cursor: pointer; margin-left: 8px;
+  transition: all var(--dur-fast) var(--ease);
+}
+.btn-withdraw-sm:hover { background: var(--danger); color: #fff; }
+
+.btn-toggle-job {
+  padding: 5px 14px; border-radius: var(--r-sm); background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all var(--dur-fast) var(--ease);
+}
+.btn-toggle-job:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ========== Apply Status Box ========== */
+.apply-status-box {
+  padding: 12px 18px; border-radius: var(--r-md); font-size: 14px; font-weight: 600;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+}
+.apply-status-box.status-pending { background: #FEF3C7; color: #92400E; }
+.apply-status-box.status-accepted { background: var(--secondary-pale); color: var(--secondary); }
+.apply-status-box.status-rejected { background: #FEE2E2; color: #991B1B; }
+
+/* ========== Status Badge Closed ========== */
+.status-closed { background: var(--text-light); color: var(--text-muted); }
 
 /* ========== Responsive ========== */
 @media (max-width: 768px) {

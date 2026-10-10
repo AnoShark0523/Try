@@ -72,9 +72,9 @@ function defaultDB() {
     nextRatingId: 3,
 
     notifications: [
-      { id: 1, userId: 1, type: 'application', title: '投递成功', content: '「周末咖啡厅吧台助手」已提交投递', read: false, time: '2026-10-08 14:23' },
-      { id: 2, userId: 1, type: 'order', title: '订单更新', content: '「周末咖啡厅吧台助手」订单已生成，请按时到岗', read: false, time: '2026-10-08 15:00' },
-      { id: 3, userId: 3, type: 'application', title: '新投递', content: '李同学投递了「周末咖啡厅吧台助手」', read: false, time: '2026-10-08 14:23' },
+      { id: 1, userId: 1, type: 'application', title: '投递成功', content: '「周末咖啡厅吧台助手」已提交投递', read: false, time: '2026-10-08 14:23', linkType: 'detail', linkId: 1 },
+      { id: 2, userId: 1, type: 'order', title: '订单更新', content: '「周末咖啡厅吧台助手」订单已生成，请按时到岗', read: false, time: '2026-10-08 15:00', linkType: 'orders', linkId: 0 },
+      { id: 3, userId: 3, type: 'application', title: '新投递', content: '李同学投递了「周末咖啡厅吧台助手」', read: false, time: '2026-10-08 14:23', linkType: 'detail', linkId: 1 },
     ],
     nextNotifId: 4,
 

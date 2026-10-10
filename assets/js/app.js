@@ -183,7 +183,7 @@ function renderHome() {
   if (!catGrid) return;
   catGrid.innerHTML = DB.categories ? DB.categories.map(c => {
     const count = DB.jobs.filter(j => j.category === c.name && j.status === 'open').length;
-    return `<div class="category-card" onclick="navigate('jobs')">
+    return `<div class="category-card" onclick="filterByCategory('${esc(c.name)}')">
       <div class="cat-icon">${c.icon}</div>
       <div class="cat-name">${esc(c.name)}</div>
       <div class="cat-count">${count}个岗位</div>
@@ -191,7 +191,15 @@ function renderHome() {
   }).join('') : '';
 
   const hotJobs = document.getElementById('hot-jobs');
-  if (hotJobs) hotJobs.innerHTML = DB.jobs.slice(0, 4).map(jobCardHTML).join('');
+  if (hotJobs) hotJobs.innerHTML = DB.jobs.filter(j => j.status === 'open').slice(0, 4).map(jobCardHTML).join('');
+}
+
+function filterByCategory(catName) {
+  navigate('jobs');
+  setTimeout(() => {
+    const sel = document.getElementById('filter-category');
+    if (sel) { sel.value = catName; renderJobs(); }
+  }, 100);
 }
 
 // ========== Render: Jobs ==========
@@ -269,7 +277,34 @@ function renderDetail(jobId) {
 
   const avgRating = getAvgRating(j.merchantId);
   const ratingStars = avgRating > 0 ? '⭐'.repeat(Math.round(avgRating)) + ' ' + avgRating : '暂无评价';
-  const alreadyApplied = isLoggedIn() && isStudent() && checkDuplicateApplication(getCurrentUser().id, j.id);
+
+  let applySection = '';
+  if (isLoggedIn() && isStudent()) {
+    const user = getCurrentUser();
+    const myApp = DB.applications.find(a => a.jobId === j.id && a.studentId === user.id);
+    if (myApp) {
+      if (myApp.status === 'pending') {
+        applySection = `<div class="apply-status-box status-pending">📋 已投递，等待商家处理 <button class="btn-withdraw-sm" onclick="withdrawApplication(${myApp.id})">撤回投递</button></div>`;
+      } else if (myApp.status === 'accepted') {
+        const order = DB.orders.find(o => o.jobId === j.id && o.studentId === user.id);
+        if (order) {
+          applySection = `<div class="apply-status-box status-accepted">✅ 已录用，订单号：${esc(order.id)} <span class="order-status order-${order.status}">${esc(order.statusText)}</span> <button class="btn-link" onclick="navigate('orders')">查看订单</button></div>`;
+        } else {
+          applySection = '<div class="apply-status-box status-accepted">✅ 已录用，请等待订单生成</div>';
+        }
+      } else if (myApp.status === 'rejected') {
+        applySection = '<div class="apply-status-box status-rejected">❌ 投递未通过</div>';
+      } else if (myApp.status === 'withdrawn') {
+        applySection = `<button class="btn-primary" onclick="applyJob(${j.id})">重新投递</button>`;
+      }
+    } else {
+      applySection = `<button class="btn-primary" onclick="applyJob(${j.id})">立即投递</button>`;
+    }
+  } else if (isLoggedIn() && isMerchant()) {
+    applySection = '<span style="color:var(--text-muted)">商家账号无法投递岗位</span>';
+  } else {
+    applySection = `<button class="btn-primary" onclick="navigate('login')">登录后投递</button>`;
+  }
 
   el.innerHTML = `
     <div class="detail-header">
@@ -297,13 +332,7 @@ function renderDetail(jobId) {
       <h3>福利待遇</h3><p>${esc(j.benefits)}</p>
     </div>
     <div class="detail-actions">
-      ${alreadyApplied
-        ? '<button class="btn-primary" disabled style="opacity:0.6;cursor:not-allowed">已投递</button>'
-        : isStudent()
-          ? `<button class="btn-primary" onclick="applyJob(${j.id})">立即投递</button>`
-          : isLoggedIn()
-            ? '<span style="color:var(--text-muted)">商家账号无法投递岗位</span>'
-            : `<button class="btn-primary" onclick="navigate('login')">登录后投递</button>`}
+      ${applySection}
       <button class="btn-outline" onclick="navigate('jobs')">返回列表</button>
     </div>`;
 }
@@ -328,11 +357,13 @@ function applyJob(jobId) {
     id: DB.nextNotifId++, userId: user.id, type: 'application',
     title: '投递成功', content: '「' + j.title + '」已提交投递', read: false,
     time: new Date().toLocaleString('zh-CN'),
+    linkType: 'detail', linkId: j.id,
   });
   DB.notifications.push({
     id: DB.nextNotifId++, userId: j.merchantId, type: 'application',
     title: '新投递', content: user.name + '投递了「' + j.title + '」', read: false,
     time: new Date().toLocaleString('zh-CN'),
+    linkType: 'detail', linkId: j.id,
   });
   saveDB(DB);
   toast('投递成功！等待商家确认');
@@ -470,15 +501,44 @@ function renderApplications(tab) {
   const tbody = document.getElementById('app-tbody');
   if (!tbody) return;
   if (apps.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">暂无投递记录</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">暂无投递记录</td></tr>';
     return;
   }
-  tbody.innerHTML = apps.map(a => `<tr>
+  tbody.innerHTML = apps.map(a => {
+    let actionCell = '';
+    if (a.status === 'pending') {
+      actionCell = `<button class="btn-withdraw" onclick="withdrawApplication(${a.id})">撤回</button>`;
+    } else if (a.status === 'accepted') {
+      actionCell = '<span style="font-size:12px;color:var(--info)">待确认完成</span>';
+    } else if (a.status === 'completed') {
+      actionCell = '<span style="font-size:12px;color:var(--secondary)">✓ 已完成</span>';
+    }
+    return `<tr>
     <td><a onclick="navigate('detail', ${a.jobId})">${esc(a.jobTitle)}</a></td>
     <td>${esc(a.merchantName)}</td>
     <td>${esc(a.applyTime)}</td>
     <td><span class="order-status order-${a.status}">${esc(a.statusText)}</span></td>
-  </tr>`).join('');
+    <td>${actionCell}</td>
+  </tr>`;
+  }).join('');
+}
+
+function withdrawApplication(appId) {
+  confirmDialog('确认撤回该投递？撤回后无法恢复。', () => {
+    const app = DB.applications.find(a => a.id === appId);
+    if (!app) return;
+    app.status = 'withdrawn';
+    app.statusText = '已撤回';
+    DB.notifications.push({
+      id: DB.nextNotifId++, userId: app.merchantId, type: 'application',
+      title: '投递已撤回', content: '学生撤回了对「' + app.jobTitle + '」的投递', read: false,
+      time: new Date().toLocaleString('zh-CN'),
+      linkType: '', linkId: 0,
+    });
+    saveDB(DB);
+    toast('投递已撤回');
+    renderApplications(currentAppTab);
+  });
 }
 
 // ========== Orders ==========
@@ -489,19 +549,49 @@ function renderOrders() {
   const tbody = document.getElementById('order-tbody');
   if (!tbody) return;
   if (orders.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted)">暂无订单</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-muted)">暂无订单</td></tr>';
     return;
   }
-  tbody.innerHTML = orders.map(o => `<tr>
+  tbody.innerHTML = orders.map(o => {
+    let actionCell = '—';
+    if (o.status === 'ongoing') {
+      actionCell = `<button class="btn-complete" onclick="completeOrder('${esc(o.id)}')">确认完成</button>`;
+    } else if (o.status === 'completed' && !o.rated) {
+      actionCell = `<button class="btn-rate" onclick="openRatingModal('${esc(o.id)}')">评价</button>`;
+    } else if (o.rated) {
+      actionCell = '已评价';
+    }
+    return `<tr>
     <td style="font-family:monospace">${esc(o.id)}</td>
-    <td>${esc(o.jobTitle)}</td>
+    <td><a onclick="navigate('detail', ${o.jobId})">${esc(o.jobTitle)}</a></td>
     <td>${esc(o.merchantName)}</td>
     <td>${esc(o.date)}</td>
     <td>${o.hours}h</td>
     <td style="font-weight:700;color:var(--secondary)">¥${o.total}</td>
     <td><span class="order-status order-${o.status}">${esc(o.statusText)}</span></td>
-    <td>${o.status === 'completed' && !o.rated ? `<button class="btn-rate" onclick="openRatingModal('${esc(o.id)}')">评价</button>` : o.rated ? '已评价' : '—'}</td>
-  </tr>`).join('');
+    <td>${actionCell}</td>
+  </tr>`;
+  }).join('');
+}
+
+function completeOrder(orderId) {
+  confirmDialog('确认该订单已完成？完成后可进行评价。', () => {
+    const order = DB.orders.find(o => o.id === orderId);
+    if (!order) return;
+    order.status = 'completed';
+    order.statusText = '已完成';
+    const otherId = getCurrentUser().role === 'student' ? order.merchantId : order.studentId;
+    DB.notifications.push({
+      id: DB.nextNotifId++, userId: otherId, type: 'order',
+      title: '订单已完成', content: '「' + order.jobTitle + '」订单已确认完成', read: false,
+      time: new Date().toLocaleString('zh-CN'),
+      linkType: 'orders', linkId: 0,
+    });
+    saveDB(DB);
+    toast('订单已完成');
+    renderOrders();
+    updateNavByRole();
+  });
 }
 
 // ========== Rating Modal ==========
@@ -555,24 +645,30 @@ function renderMerchantDashboard() {
   if (!user || !isMerchant()) return;
   const myJobs = getMerchantJobs(user.id);
   const myApps = getMerchantApplications(user.id);
+  const myOrders = DB.orders.filter(o => o.merchantId === user.id);
+  const ongoingOrders = myOrders.filter(o => o.status === 'ongoing');
 
   document.getElementById('merchant-stats').innerHTML = `
     <div class="agent-stat-card"><div class="stat-icon">📋</div><div class="stat-value">${myJobs.length}</div><div class="stat-label">已发布岗位</div></div>
     <div class="agent-stat-card"><div class="stat-icon">📨</div><div class="stat-value">${myApps.length}</div><div class="stat-label">收到投递</div></div>
-    <div class="agent-stat-card"><div class="stat-icon">⭐</div><div class="stat-value">${getAvgRating(user.id)}</div><div class="stat-label">平均评分</div></div>`;
+    <div class="agent-stat-card"><div class="stat-icon">📦</div><div class="stat-value">${ongoingOrders.length}</div><div class="stat-label">进行中订单</div></div>`;
 
   const jobTbody = document.getElementById('merchant-job-tbody');
   if (jobTbody) {
     if (myJobs.length === 0) {
-      jobTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">暂未发布岗位</td></tr>';
+      jobTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">暂未发布岗位</td></tr>';
     } else {
       jobTbody.innerHTML = myJobs.map(j => {
         const appCount = myApps.filter(a => a.jobId === j.id).length;
+        const isClosed = j.status === 'closed';
         return `<tr>
           <td><a onclick="navigate('detail', ${j.id})">${esc(j.title)}</a></td>
           <td>${esc(j.salary)}</td>
-          <td><span class="status-badge ${j.urgent ? 'status-urgent' : 'status-open'}">${j.urgent ? '急招' : '招聘中'}</span></td>
+          <td><span class="status-badge ${j.urgent ? 'status-urgent' : isClosed ? 'status-closed' : 'status-open'}">${j.urgent ? '急招' : isClosed ? '已关闭' : '招聘中'}</span></td>
           <td>${appCount}人投递</td>
+          <td>
+            <button class="btn-toggle-job" onclick="toggleJobStatus(${j.id})">${isClosed ? '重新开放' : '关闭招聘'}</button>
+          </td>
         </tr>`;
       }).join('');
     }
@@ -584,17 +680,102 @@ function renderMerchantDashboard() {
     if (pending.length === 0) {
       appTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">暂无待处理投递</td></tr>';
     } else {
-      appTbody.innerHTML = pending.map(a => `<tr>
-        <td>${esc(a.studentName)}</td>
-        <td><a onclick="navigate('detail', ${a.jobId})">${esc(a.jobTitle)}</a></td>
-        <td>${esc(a.applyTime)}</td>
-        <td><span class="order-status order-pending">待处理</span></td>
-        <td>
-          <button class="btn-accept" onclick="acceptApplication(${a.id})">录用</button>
-          <button class="btn-reject" onclick="rejectApplication(${a.id})">拒绝</button>
-        </td>
+      appTbody.innerHTML = pending.map(a => {
+        const student = DB.users.find(u => u.id === a.studentId);
+        return `<tr>
+          <td>
+            ${esc(a.studentName)}
+            ${student ? `<a onclick="viewStudentProfile(${a.studentId})" style="font-size:11px;margin-left:4px">查看资料</a>` : ''}
+          </td>
+          <td><a onclick="navigate('detail', ${a.jobId})">${esc(a.jobTitle)}</a></td>
+          <td>${esc(a.applyTime)}</td>
+          <td><span class="order-status order-pending">待处理</span></td>
+          <td>
+            <button class="btn-accept" onclick="acceptApplication(${a.id})">录用</button>
+            <button class="btn-reject" onclick="rejectApplication(${a.id})">拒绝</button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+  }
+
+  const orderTbody = document.getElementById('merchant-order-tbody');
+  if (orderTbody) {
+    if (ongoingOrders.length === 0) {
+      orderTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">暂无进行中订单</td></tr>';
+    } else {
+      orderTbody.innerHTML = ongoingOrders.map(o => `<tr>
+        <td style="font-family:monospace">${esc(o.id)}</td>
+        <td>${esc(o.studentName)}</td>
+        <td><a onclick="navigate('detail', ${o.jobId})">${esc(o.jobTitle)}</a></td>
+        <td style="font-weight:700;color:var(--secondary)">¥${o.total}</td>
+        <td><span class="order-status order-ongoing">进行中</span></td>
+        <td><button class="btn-complete" onclick="completeOrder('${esc(o.id)}')">确认完成</button></td>
       </tr>`).join('');
     }
+  }
+}
+
+function toggleJobStatus(jobId) {
+  const j = getJobById(jobId);
+  if (!j) return;
+  if (j.status === 'closed') {
+    j.status = 'open';
+    toast('岗位已重新开放');
+  } else {
+    j.status = 'closed';
+    toast('岗位已关闭招聘');
+  }
+  saveDB(DB);
+  renderMerchantDashboard();
+}
+
+function viewStudentProfile(studentId) {
+  const student = DB.users.find(u => u.id === studentId);
+  if (!student) { toast('用户不存在'); return; }
+  const apps = getUserApplications(studentId);
+  const orders = DB.orders.filter(o => o.studentId === studentId);
+  const completed = orders.filter(o => o.status === 'completed');
+  const avgRating = getAvgRating(studentId);
+  const ratings = getRatingsForUser(studentId);
+  const skills = student.skills || [];
+
+  const html = `
+    <div class="detail-header">
+      <div style="display:flex;gap:16px;align-items:center">
+        <div class="profile-avatar">${esc(student.avatar)}</div>
+        <div>
+          <h1>${esc(student.name)} <span class="profile-role-badge role-student">学生</span></h1>
+          <p style="color:var(--text-muted);font-size:14px;margin-top:4px">${esc(student.university)} · ${esc(student.major)} · ${esc(student.grade)}</p>
+          <p style="color:var(--text-muted);font-size:13px;margin-top:4px">信用分：${student.creditScore}${avgRating > 0 ? ' | ⭐ ' + avgRating : ''}</p>
+        </div>
+      </div>
+    </div>
+    <div class="detail-body">
+      <h3>个人简介</h3><p>${esc(student.bio || '暂未填写简介')}</p>
+      ${skills.length > 0 ? `<h3>技能标签</h3><div class="job-tags">${skills.map(s => `<span class="tag">${esc(s)}</span>`).join('')}</div>` : ''}
+      <h3>空闲时间</h3><p>${esc(student.availableTime || '未填写')}</p>
+      <h3>期望薪资</h3><p>${esc(student.expectedSalary || '面议')}</p>
+      ${student.preferredCategories && student.preferredCategories.length > 0 ? `<h3>偏好分类</h3><div class="job-tags">${student.preferredCategories.map(c => `<span class="tag">${esc(c)}</span>`).join('')}</div>` : ''}
+      <h3>兼职数据</h3><p>累计投递${apps.length}次 · 完成兼职${completed.length}份</p>
+    </div>
+    ${ratings.length > 0 ? `<div class="detail-body"><h3>历史评价</h3>${ratings.map(r => {
+      const fromUser = DB.users.find(u => u.id === r.fromId);
+      return `<div class="review-item" style="margin-bottom:8px">
+        <div class="review-header"><span style="font-weight:600">${esc(fromUser ? fromUser.name : '匿名')}</span><span class="stars">${'⭐'.repeat(r.rating)}</span></div>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:4px">${esc(r.content || '暂无评价内容')}</p>
+      </div>`;
+    }).join('')}</div>` : ''}
+    <div class="detail-actions">
+      <button class="btn-outline" onclick="navigate('merchant')">返回</button>
+    </div>`;
+
+  const el = document.getElementById('detail-content');
+  if (el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-detail').classList.add('active');
+    el.innerHTML = html;
+    window.scrollTo(0, 0);
   }
 }
 
@@ -618,6 +799,7 @@ function acceptApplication(appId) {
     id: DB.nextNotifId++, userId: app.studentId, type: 'order',
     title: '投递通过', content: '「' + app.jobTitle + '」已通过审核，订单已生成', read: false,
     time: new Date().toLocaleString('zh-CN'),
+    linkType: 'orders', linkId: 0,
   });
   saveDB(DB);
   toast('已录用，订单已生成');
@@ -636,6 +818,7 @@ function rejectApplication(appId) {
     id: DB.nextNotifId++, userId: app.studentId, type: 'application',
     title: '投递未通过', content: '「' + app.jobTitle + '」投递未通过', read: false,
     time: new Date().toLocaleString('zh-CN'),
+    linkType: 'applications', linkId: 0,
   });
   saveDB(DB);
   toast('已拒绝该投递');
@@ -670,15 +853,28 @@ function renderNotifications() {
     el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔔</div><p>暂无通知</p></div>';
     return;
   }
-  el.innerHTML = notifs.map(n => `<div class="notif-item ${n.read ? '' : 'unread'}" onclick="markRead(${n.id})">
-    <div class="notif-icon">${n.type === 'order' ? '📦' : n.type === 'application' ? '📨' : '🔔'}</div>
-    <div class="notif-content">
-      <div class="notif-title">${esc(n.title)}</div>
-      <div class="notif-desc">${esc(n.content)}</div>
-      <div class="notif-time">${esc(n.time)}</div>
-    </div>
-    ${!n.read ? '<div class="notif-dot"></div>' : ''}
-  </div>`).join('');
+  el.innerHTML = notifs.map(n => {
+    const icon = n.type === 'order' ? '📦' : n.type === 'application' ? '📨' : '🔔';
+    const hasLink = n.linkType && n.linkType !== '';
+    return `<div class="notif-item ${n.read ? '' : 'unread'}" ${hasLink ? `onclick="notifNavigate(${n.id})"` : `onclick="markRead(${n.id})"`}>
+      <div class="notif-icon">${icon}</div>
+      <div class="notif-content">
+        <div class="notif-title">${esc(n.title)}</div>
+        <div class="notif-desc">${esc(n.content)}</div>
+        <div class="notif-time">${esc(n.time)}${hasLink ? ' · 点击查看详情 →' : ''}</div>
+      </div>
+      ${!n.read ? '<div class="notif-dot"></div>' : ''}
+    </div>`;
+  }).join('');
+}
+function notifNavigate(id) {
+  const n = DB.notifications.find(x => x.id === id);
+  if (!n) return;
+  if (!n.read) { n.read = true; saveDB(DB); updateNavByRole(); }
+  if (n.linkType === 'detail' && n.linkId) navigate('detail', n.linkId);
+  else if (n.linkType === 'orders') navigate('orders');
+  else if (n.linkType === 'applications') navigate('applications');
+  else if (n.linkType === 'profile' && n.linkId) navigate('profile');
 }
 function markRead(id) {
   const n = DB.notifications.find(x => x.id === id);
