@@ -306,10 +306,29 @@
   <!-- ========== 个人中心 ========== -->
   <div id="page-profile" class="page">
     <div class="profile-header reveal-1" id="profile-info"></div>
-    <div class="section-title">我的统计</div>
-    <div class="agent-dashboard" id="profile-stats"></div>
-    <div class="section-title">收到的评价</div>
-    <div id="profile-ratings"></div>
+    <div class="profile-completeness-bar reveal-1" id="profile-completeness"></div>
+    <div class="profile-body">
+      <div class="profile-main">
+        <div class="section-title">个人简介</div>
+        <div class="profile-bio-card reveal-2" id="profile-bio"></div>
+        <div class="section-title" style="margin-top:28px">技能标签</div>
+        <div class="profile-skills-card reveal-3" id="profile-skills"></div>
+        <div class="section-title" style="margin-top:28px">空闲时间与期望</div>
+        <div class="profile-avail-card reveal-3" id="profile-availability"></div>
+        <div class="section-title" style="margin-top:28px">智能推荐岗位</div>
+        <div id="profile-smart-match" class="reveal-4"></div>
+      </div>
+      <div class="profile-side">
+        <div class="section-title">成就徽章</div>
+        <div class="profile-achievement-grid reveal-2" id="profile-achievements"></div>
+        <div class="section-title" style="margin-top:28px">简历预览</div>
+        <div class="profile-resume-card reveal-3" id="profile-resume"></div>
+      </div>
+    </div>
+    <div class="section-title" style="margin-top:28px">我的统计</div>
+    <div class="agent-dashboard reveal-4" id="profile-stats"></div>
+    <div class="section-title" style="margin-top:28px">收到的评价</div>
+    <div id="profile-ratings" class="reveal-5"></div>
   </div>
 
 </div>
@@ -347,6 +366,52 @@
     <div class="form-footer" style="justify-content:center">
       <button class="btn-cancel" id="confirm-no">取消</button>
       <button class="btn-submit" id="confirm-yes" style="background:var(--danger)">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Edit Profile Modal ========== -->
+<div id="edit-profile-modal" class="modal-overlay" style="display:none">
+  <div class="modal-card" style="max-width:560px;max-height:85vh;overflow-y:auto">
+    <h3>编辑个人资料</h3>
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px">完善资料可提升岗位匹配度与信用分</p>
+    <div class="form-group">
+      <label>个人简介</label>
+      <textarea id="edit-bio" placeholder="简单介绍自己，如性格特点、兼职经验、擅长方向..." style="min-height:100px"></textarea>
+    </div>
+    <div id="edit-student-only">
+      <div class="form-group">
+        <label>技能标签 <span style="font-size:12px;color:var(--text-muted)">（逗号分隔，如：Python,沟通能力,PS）</span></label>
+        <input id="edit-skills" placeholder="用逗号分隔技能">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>空闲时间</label>
+          <input id="edit-available" placeholder="如：周六全天、周日全天">
+        </div>
+        <div class="form-group">
+          <label>期望薪资</label>
+          <input id="edit-salary" placeholder="如：120-200元/天">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>偏好岗位分类 <span style="font-size:12px;color:var(--text-muted)">（多选）</span></label>
+        <div class="checkbox-group" id="edit-categories"></div>
+      </div>
+    </div>
+    <div id="edit-merchant-only" style="display:none">
+      <div class="form-group">
+        <label>商家名称</label>
+        <input id="edit-merchant-name" placeholder="如：蓝湾咖啡">
+      </div>
+      <div class="form-group">
+        <label>商家地址</label>
+        <input id="edit-merchant-addr" placeholder="如：大学城南路12号">
+      </div>
+    </div>
+    <div class="form-footer">
+      <button class="btn-cancel" onclick="closeEditProfileModal()">取消</button>
+      <button class="btn-submit" onclick="saveProfileEdit()">保存</button>
     </div>
   </div>
 </div>

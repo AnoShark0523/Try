@@ -140,6 +140,7 @@ function doRegister() {
     merchantName: '', merchantAddr: '',
     creditScore: 100,
     createdAt: new Date().toLocaleDateString('zh-CN'),
+    bio: '', skills: [], availableTime: '', expectedSalary: '', preferredCategories: [], achievements: [],
   };
   if (role.value === 'student') {
     user.university = document.getElementById('reg-university').value.trim() || '未填写';
@@ -682,6 +683,8 @@ function markRead(id) {
 }
 
 // ========== Profile ==========
+let editSelectedCategories = [];
+
 function renderProfile() {
   const user = getCurrentUser();
   if (!user) return;
@@ -691,23 +694,201 @@ function renderProfile() {
   const totalIncome = completed.reduce((s, o) => s + o.total, 0);
   const avgRating = getAvgRating(user.id);
   const ratings = getRatingsForUser(user.id);
+  const completeness = getProfileCompleteness(user);
+
+  const isStudent = user.role === 'student';
+  const subtitle = isStudent
+    ? esc(user.university) + ' · ' + esc(user.major) + ' · ' + esc(user.grade)
+    : esc(user.merchantName) + ' · ' + esc(user.merchantAddr);
 
   document.getElementById('profile-info').innerHTML = `
     <div class="profile-avatar">${esc(user.avatar)}</div>
-    <div class="profile-info">
-      <h2>${esc(user.name)}</h2>
-      <p style="color:var(--text-muted);font-size:14px">${user.role === 'student' ? esc(user.university) + ' · ' + esc(user.major) + ' · ' + esc(user.grade) : esc(user.merchantName) + ' · ' + esc(user.merchantAddr)}</p>
-      <p style="color:var(--text-muted);font-size:13px;margin-top:4px">手机：${esc(user.phone)} | 信用分：${user.creditScore}</p>
-      <div class="profile-tags">
-        <span class="profile-tag">${user.role === 'student' ? '学生' : '商家'}</span>
-        ${avgRating > 0 ? `<span class="profile-tag">⭐ ${avgRating}</span>` : ''}
+    <div class="profile-info" style="flex:1">
+      <div style="display:flex;align-items:center;gap:10px">
+        <h2>${esc(user.name)}</h2>
+        <span class="profile-role-badge ${isStudent ? 'role-student' : 'role-merchant'}">${isStudent ? '🎓 学生' : '🏪 商家'}</span>
       </div>
-    </div>`;
+      <p style="color:var(--text-muted);font-size:14px;margin-top:2px">${subtitle}</p>
+      <p style="color:var(--text-muted);font-size:13px;margin-top:4px">手机：${esc(user.phone)}</p>
+      <div class="profile-tags">
+        <span class="profile-tag">信用分 ${user.creditScore}</span>
+        ${avgRating > 0 ? `<span class="profile-tag tag-accent">⭐ ${avgRating}</span>` : ''}
+        <span class="profile-tag">注册于 ${esc(user.createdAt)}</span>
+      </div>
+    </div>
+    <button class="btn-edit-profile" onclick="openEditProfileModal()">编辑资料</button>`;
+
+  const compEl = document.getElementById('profile-completeness');
+  if (compEl) {
+    const compColor = completeness >= 80 ? 'var(--secondary)' : completeness >= 50 ? 'var(--warning)' : 'var(--danger)';
+    compEl.innerHTML = `
+      <div class="completeness-header">
+        <span style="font-size:13px;font-weight:600">资料完整度</span>
+        <span style="font-size:14px;font-weight:800;color:${compColor}">${completeness}%</span>
+      </div>
+      <div class="completeness-track">
+        <div class="completeness-fill" style="width:${completeness}%;background:${compColor}"></div>
+      </div>
+      ${completeness < 100 ? `<p style="font-size:12px;color:var(--text-muted);margin-top:6px">完善资料可提升匹配推荐精度${completeness < 50 ? '，建议尽快补充' : ''}</p>` : '<p style="font-size:12px;color:var(--secondary);margin-top:6px">资料已完善，匹配推荐精度最佳</p>'}
+    `;
+  }
+
+  const bioEl = document.getElementById('profile-bio');
+  if (bioEl) {
+    bioEl.innerHTML = user.bio && user.bio.trim()
+      ? `<p class="bio-text">${esc(user.bio)}</p>`
+      : `<div class="empty-inline" style="text-align:center;padding:20px"><p style="color:var(--text-muted);font-size:14px">还没有填写个人简介</p><button class="btn-link" onclick="openEditProfileModal()">去完善</button></div>`;
+  }
+
+  const skillsEl = document.getElementById('profile-skills');
+  if (skillsEl) {
+    const skills = user.skills || [];
+    if (skills.length > 0) {
+      skillsEl.innerHTML = `<div class="skill-tags">${skills.map((s, i) => {
+        const levels = ['入门', '熟悉', '熟练', '精通'];
+        const level = levels[Math.min(i % 4, 3)];
+        const barWidth = ((i % 4) + 1) * 25;
+        return `<div class="skill-tag-item">
+          <div class="skill-tag-header"><span>${esc(s)}</span><span class="skill-level">${level}</span></div>
+          <div class="skill-bar"><div class="skill-bar-fill" style="width:${barWidth}%"></div></div>
+        </div>`;
+      }).join('')}</div>`;
+    } else {
+      skillsEl.innerHTML = '<div class="empty-inline" style="text-align:center;padding:20px"><p style="color:var(--text-muted);font-size:14px">暂未添加技能标签</p></div>';
+    }
+  }
+
+  const availEl = document.getElementById('profile-availability');
+  if (availEl) {
+    if (isStudent) {
+      const cats = user.preferredCategories || [];
+      availEl.innerHTML = `
+        <div class="avail-grid">
+          <div class="avail-item">
+            <div class="avail-icon">📅</div>
+            <div class="avail-label">空闲时间</div>
+            <div class="avail-value">${esc(user.availableTime) || '未填写'}</div>
+          </div>
+          <div class="avail-item">
+            <div class="avail-icon">💰</div>
+            <div class="avail-label">期望薪资</div>
+            <div class="avail-value">${esc(user.expectedSalary) || '面议'}</div>
+          </div>
+        </div>
+        <div style="margin-top:16px">
+          <div class="avail-label" style="margin-bottom:8px">偏好岗位分类</div>
+          ${cats.length > 0
+            ? `<div class="pref-cats">${cats.map(c => `<span class="pref-cat-tag">${esc(c)}</span>`).join('')}</div>`
+            : '<p style="color:var(--text-muted);font-size:13px">暂未设置偏好分类</p>'}
+        </div>`;
+    } else {
+      availEl.innerHTML = `
+        <div class="avail-grid">
+          <div class="avail-item">
+            <div class="avail-icon">🏪</div>
+            <div class="avail-label">商家名称</div>
+            <div class="avail-value">${esc(user.merchantName)}</div>
+          </div>
+          <div class="avail-item">
+            <div class="avail-icon">📍</div>
+            <div class="avail-label">商家地址</div>
+            <div class="avail-value">${esc(user.merchantAddr)}</div>
+          </div>
+        </div>`;
+    }
+  }
+
+  const matchEl = document.getElementById('profile-smart-match');
+  if (matchEl && isStudent) {
+    const matches = getSmartMatchJobs(user.id, 3);
+    if (matches.length > 0) {
+      matchEl.innerHTML = matches.map(j => `
+        <div class="smart-match-card" onclick="navigate('detail', ${j.id})">
+          <div class="match-info">
+            <div style="font-weight:700;font-size:14px">${esc(j.title)}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${esc(j.merchantName)} · ${esc(j.salary)}</div>
+          </div>
+          <div class="match-score">
+            <div class="match-score-ring" style="--p:${j.matchScore}%"><span>${j.matchScore}</span></div>
+            <span style="font-size:11px;color:var(--text-muted)">匹配度</span>
+          </div>
+        </div>`).join('');
+    } else {
+      matchEl.innerHTML = '<div class="empty-inline" style="padding:20px;text-align:center"><p style="color:var(--text-muted);font-size:14px">暂无可推荐岗位，请完善偏好设置</p></div>';
+    }
+  } else if (matchEl) {
+    matchEl.innerHTML = '<div class="empty-inline" style="padding:20px;text-align:center"><p style="color:var(--text-muted);font-size:14px">智能推荐仅对学生开放</p></div>';
+  }
+
+  const achEl = document.getElementById('profile-achievements');
+  if (achEl) {
+    const achievements = user.achievements || [];
+    const allKeys = Object.keys(ACHIEVEMENT_DEFS);
+    achEl.innerHTML = allKeys.map(key => {
+      const def = ACHIEVEMENT_DEFS[key];
+      const earned = achievements.includes(key);
+      return `<div class="achievement-badge ${earned ? 'earned' : 'locked'}">
+        <div class="ach-icon">${def.icon}</div>
+        <div class="ach-name">${def.name}</div>
+        <div class="ach-desc">${def.desc}</div>
+      </div>`;
+    }).join('');
+  }
+
+  const resumeEl = document.getElementById('profile-resume');
+  if (resumeEl) {
+    if (isStudent) {
+      resumeEl.innerHTML = `
+        <div class="resume-mini">
+          <div class="resume-header">
+            <div class="resume-avatar">${esc(user.avatar)}</div>
+            <div>
+              <div class="resume-name">${esc(user.name)}</div>
+              <div class="resume-sub">${esc(user.university)} · ${esc(user.major)} · ${esc(user.grade)}</div>
+              <div class="resume-contact">${esc(user.phone)}</div>
+            </div>
+          </div>
+          <div class="resume-section">
+            <div class="resume-section-title">个人简介</div>
+            <p>${esc(user.bio || '暂无简介')}</p>
+          </div>
+          <div class="resume-section">
+            <div class="resume-section-title">技能</div>
+            <p>${(user.skills||[]).join('、') || '暂无'}</p>
+          </div>
+          <div class="resume-section">
+            <div class="resume-section-title">兼职经历</div>
+            <p>${completed.length}份已完成 · 累计收入${totalIncome}元</p>
+          </div>
+        </div>
+        <button class="btn-print-resume" onclick="printResume()">打印简历</button>`;
+    } else {
+      resumeEl.innerHTML = `
+        <div class="resume-mini">
+          <div class="resume-header">
+            <div class="resume-avatar">${esc(user.avatar)}</div>
+            <div>
+              <div class="resume-name">${esc(user.merchantName)}</div>
+              <div class="resume-sub">${esc(user.name)} · ${esc(user.merchantAddr)}</div>
+              <div class="resume-contact">${esc(user.phone)}</div>
+            </div>
+          </div>
+          <div class="resume-section">
+            <div class="resume-section-title">商家简介</div>
+            <p>${esc(user.bio || '暂无简介')}</p>
+          </div>
+          <div class="resume-section">
+            <div class="resume-section-title">招聘数据</div>
+            <p>已发布${getMerchantJobs(user.id).length}个岗位 · 收到${getMerchantApplications(user.id).length}份投递</p>
+          </div>
+        </div>`;
+    }
+  }
 
   document.getElementById('profile-stats').innerHTML = `
-    <div class="agent-stat-card"><div class="stat-icon">${user.role === 'student' ? '📝' : '📋'}</div><div class="stat-value">${user.role === 'student' ? apps.length : getMerchantJobs(user.id).length}</div><div class="stat-label">${user.role === 'student' ? '累计投递' : '已发布岗位'}</div></div>
-    <div class="agent-stat-card"><div class="stat-icon">✅</div><div class="stat-value">${user.role === 'student' ? apps.filter(a => a.status === 'accepted' || a.status === 'completed').length : getMerchantApplications(user.id).length}</div><div class="stat-label">${user.role === 'student' ? '成功录用' : '收到投递'}</div></div>
-    <div class="agent-stat-card"><div class="stat-icon">💰</div><div class="stat-value">${totalIncome}</div><div class="stat-label">${user.role === 'student' ? '累计收入(元)' : '支付总额(元)'}</div></div>`;
+    <div class="agent-stat-card"><div class="stat-icon">${isStudent ? '📝' : '📋'}</div><div class="stat-value">${isStudent ? apps.length : getMerchantJobs(user.id).length}</div><div class="stat-label">${isStudent ? '累计投递' : '已发布岗位'}</div></div>
+    <div class="agent-stat-card"><div class="stat-icon">✅</div><div class="stat-value">${isStudent ? apps.filter(a => a.status === 'accepted' || a.status === 'completed').length : getMerchantApplications(user.id).length}</div><div class="stat-label">${isStudent ? '成功录用' : '收到投递'}</div></div>
+    <div class="agent-stat-card"><div class="stat-icon">💰</div><div class="stat-value">${totalIncome}</div><div class="stat-label">${isStudent ? '累计收入(元)' : '支付总额(元)'}</div></div>`;
 
   const ratingList = document.getElementById('profile-ratings');
   if (ratingList) {
@@ -727,6 +908,113 @@ function renderProfile() {
       }).join('');
     }
   }
+}
+
+function openEditProfileModal() {
+  const user = getCurrentUser();
+  if (!user) return;
+  const modal = document.getElementById('edit-profile-modal');
+  const isStudent = user.role === 'student';
+
+  document.getElementById('edit-bio').value = user.bio || '';
+  document.getElementById('edit-student-only').style.display = isStudent ? '' : 'none';
+  document.getElementById('edit-merchant-only').style.display = isStudent ? 'none' : '';
+
+  if (isStudent) {
+    document.getElementById('edit-skills').value = (user.skills || []).join(', ');
+    document.getElementById('edit-available').value = user.availableTime || '';
+    document.getElementById('edit-salary').value = user.expectedSalary || '';
+    editSelectedCategories = [...(user.preferredCategories || [])];
+    const catBox = document.getElementById('edit-categories');
+    catBox.innerHTML = DB.categories.map(c => {
+      const checked = editSelectedCategories.includes(c.name) ? 'checked' : '';
+      return `<label class="checkbox-pill ${checked}" data-cat="${esc(c.name)}" onclick="toggleEditCategory(this)">
+        <span>${c.icon} ${esc(c.name)}</span>
+      </label>`;
+    }).join('');
+  } else {
+    document.getElementById('edit-merchant-name').value = user.merchantName || '';
+    document.getElementById('edit-merchant-addr').value = user.merchantAddr || '';
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeEditProfileModal() {
+  document.getElementById('edit-profile-modal').style.display = 'none';
+}
+
+function toggleEditCategory(el) {
+  const name = el.dataset.cat;
+  const idx = editSelectedCategories.indexOf(name);
+  if (idx >= 0) editSelectedCategories.splice(idx, 1);
+  else editSelectedCategories.push(name);
+  el.classList.toggle('checked', editSelectedCategories.includes(name));
+}
+
+function saveProfileEdit() {
+  const user = getCurrentUser();
+  if (!user) return;
+  const bio = document.getElementById('edit-bio').value.trim();
+  user.bio = bio;
+
+  if (user.role === 'student') {
+    const skillsRaw = document.getElementById('edit-skills').value.trim();
+    user.skills = skillsRaw ? skillsRaw.split(/[,，、]/).map(s => s.trim()).filter(Boolean) : [];
+    user.availableTime = document.getElementById('edit-available').value.trim();
+    user.expectedSalary = document.getElementById('edit-salary').value.trim();
+    user.preferredCategories = [...editSelectedCategories];
+  } else {
+    user.merchantName = document.getElementById('edit-merchant-name').value.trim() || user.merchantName;
+    user.merchantAddr = document.getElementById('edit-merchant-addr').value.trim() || user.merchantAddr;
+  }
+
+  const idx = DB.users.findIndex(u => u.id === user.id);
+  if (idx >= 0) DB.users[idx] = user;
+  saveDB(DB);
+  closeEditProfileModal();
+  toast('资料已更新');
+  renderProfile();
+}
+
+function printResume() {
+  const user = getCurrentUser();
+  if (!user) return;
+  const orders = getUserOrders(user.id);
+  const completed = orders.filter(o => o.status === 'completed');
+  const totalIncome = completed.reduce((s, o) => s + o.total, 0);
+  const avgRating = getAvgRating(user.id);
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(user.name)} - 简历</title>
+  <style>
+    body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;max-width:680px;margin:0 auto;padding:40px;color:#0F172A;line-height:1.6}
+    .r-header{display:flex;gap:20px;align-items:center;border-bottom:3px solid #0D9488;padding-bottom:16px;margin-bottom:20px}
+    .r-avatar{width:64px;height:64px;border-radius:50%;background:#0D9488;color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800}
+    .r-name{font-size:24px;font-weight:800}
+    .r-sub{color:#64748B;font-size:14px;margin-top:2px}
+    .r-contact{color:#64748B;font-size:13px;margin-top:2px}
+    h3{font-size:15px;color:#0D9488;border-left:3px solid #0D9488;padding-left:10px;margin:20px 0 8px}
+    p{font-size:14px;color:#475569;margin-bottom:8px}
+    .tag{display:inline-block;background:#F0FDFA;color:#0D9488;padding:2px 10px;border-radius:4px;font-size:12px;margin:2px}
+  </style></head><body>
+  <div class="r-header">
+    <div class="r-avatar">${esc(user.avatar)}</div>
+    <div>
+      <div class="r-name">${esc(user.name)}</div>
+      <div class="r-sub">${esc(user.university)} · ${esc(user.major)} · ${esc(user.grade)}</div>
+      <div class="r-contact">${esc(user.phone)} | 信用分：${user.creditScore}${avgRating > 0 ? ' | ⭐ ' + avgRating : ''}</div>
+    </div>
+  </div>
+  <h3>个人简介</h3><p>${esc(user.bio || '暂无简介')}</p>
+  <h3>技能标签</h3><p>${(user.skills||[]).map(s => '<span class="tag">' + esc(s) + '</span>').join(' ') || '暂无'}</p>
+  <h3>空闲时间</h3><p>${esc(user.availableTime) || '未填写'}</p>
+  <h3>期望薪资</h3><p>${esc(user.expectedSalary) || '面议'}</p>
+  <h3>兼职经历</h3><p>已完成${completed.length}份兼职，累计收入${totalIncome}元</p>
+  </body></html>`;
+
+  const w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); w.print(); }
+  else toast('请允许弹窗以打印简历');
 }
 
 // ========== Init ==========

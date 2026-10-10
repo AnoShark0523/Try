@@ -10,7 +10,7 @@ function esc(str) {
 }
 
 // ========== Data Layer with localStorage Persistence ==========
-const STORE_KEY = 'platform_db_v1';
+const STORE_KEY = 'platform_db_v2';
 const SESSION_KEY = 'platform_session_v1';
 
 function defaultDB() {
@@ -27,10 +27,14 @@ function defaultDB() {
     ],
 
     users: [
-      { id: 1, phone: '13800000001', password: '123456', role: 'student', name: '李同学', avatar: '李', university: '华中科技大学', major: '计算机科学', grade: '大三', creditScore: 95, createdAt: '2026-09-01' },
-      { id: 2, phone: '13800000002', password: '123456', role: 'student', name: '王同学', avatar: '王', university: '武汉大学', major: '软件工程', grade: '大二', creditScore: 90, createdAt: '2026-09-02' },
-      { id: 3, phone: '13900000001', password: '123456', role: 'merchant', name: '张老板', avatar: '张', merchantName: '蓝湾咖啡', merchantAddr: '大学城南路12号', creditScore: 92, createdAt: '2026-09-01' },
-      { id: 4, phone: '13900000002', password: '123456', role: 'merchant', name: '刘经理', avatar: '刘', merchantName: '万达广场HM专柜', merchantAddr: '光谷大道1号', creditScore: 88, createdAt: '2026-09-03' },
+      { id: 1, phone: '13800000001', password: '123456', role: 'student', name: '李同学', avatar: '李', university: '华中科技大学', major: '计算机科学', grade: '大三', creditScore: 95, createdAt: '2026-09-01',
+        bio: '计算机大三在读，周末空闲时间充裕。有咖啡厅兼职经验，也做过小学家教。做事认真负责，学习能力强。', skills: ['Python', 'C++', 'Office', 'PS基础'], availableTime: '周六全天、周日全天', expectedSalary: '120-200元/天', preferredCategories: ['技术支持','餐饮服务','家教辅导'], achievements: ['firstJob','streak3','highRated'] },
+      { id: 2, phone: '13800000002', password: '123456', role: 'student', name: '王同学', avatar: '王', university: '武汉大学', major: '软件工程', grade: '大二', creditScore: 90, createdAt: '2026-09-02',
+        bio: '软件工程大二，性格开朗外向，擅长沟通。有零售导购经验，周末可全天兼职。', skills: ['Java', '沟通能力强', '收银'], availableTime: '周六全天', expectedSalary: '100-150元/天', preferredCategories: ['零售导购','活动协助'], achievements: ['firstJob'] },
+      { id: 3, phone: '13900000001', password: '123456', role: 'merchant', name: '张老板', avatar: '张', merchantName: '蓝湾咖啡', merchantAddr: '大学城南路12号', creditScore: 92, createdAt: '2026-09-01',
+        bio: '大学城周边经营咖啡厅3年，长期需要周末兼职帮手。老板人好，从不拖欠工资，包午餐。', skills: [], availableTime: '', expectedSalary: '', preferredCategories: [], achievements: ['verified','highRated'] },
+      { id: 4, phone: '13900000002', password: '123456', role: 'merchant', name: '刘经理', avatar: '刘', merchantName: '万达广场HM专柜', merchantAddr: '光谷大道1号', creditScore: 88, createdAt: '2026-09-03',
+        bio: '万达广场连锁品牌门店，周末客流大需要导购协助。提供系统培训，日结工资。', skills: [], availableTime: '', expectedSalary: '', preferredCategories: [], achievements: ['verified'] },
     ],
     nextUserId: 5,
 
@@ -150,4 +154,54 @@ function getAvgRating(userId) {
   const rs = getRatingsForUser(userId);
   if (!rs.length) return 0;
   return Math.round((rs.reduce((s, r) => s + r.rating, 0) / rs.length) * 10) / 10;
+}
+
+// ========== Achievement Definitions ==========
+const ACHIEVEMENT_DEFS = {
+  firstJob:    { icon: '🎉', name: '首次兼职', desc: '完成第一份兼职工作' },
+  streak3:     { icon: '🔥', name: '三连周末', desc: '连续3周完成兼职' },
+  highRated:   { icon: '⭐', name: '高评价用户', desc: '获得4星以上评价' },
+  verified:    { icon: '✓',  name: '已认证', desc: '身份信息已认证' },
+  jobMaster:   { icon: '🏆', name: '兼职达人', desc: '完成5份以上兼职' },
+  activeUser:  { icon: '💬', name: '活跃用户', desc: '收到10条以上评价' },
+  punctual:    { icon: '⏰', name: '准时达人', desc: '按时到岗，无迟到记录' },
+  topEarn:     { icon: '💰', name: '小金库', desc: '累计收入超2000元' },
+};
+
+function getAchievementDef(key) { return ACHIEVEMENT_DEFS[key] || null; }
+
+// ========== Profile Completeness ==========
+function getProfileCompleteness(user) {
+  if (!user) return 0;
+  const fields = user.role === 'student'
+    ? ['name','phone','university','major','grade','bio','skills','availableTime','expectedSalary','preferredCategories']
+    : ['name','phone','merchantName','merchantAddr','bio'];
+  let filled = 0;
+  fields.forEach(f => {
+    const v = user[f];
+    if (Array.isArray(v) ? v.length > 0 : (v && v.toString().trim() && v !== '未填写')) filled++;
+  });
+  return Math.round((filled / fields.length) * 100);
+}
+
+// ========== Smart Match Score ==========
+function getSmartMatchJobs(userId, limit) {
+  const user = DB.users.find(u => u.id === userId);
+  if (!user || user.role !== 'student') return [];
+  const appliedIds = getUserApplications(userId).map(a => a.jobId);
+  let jobs = DB.jobs.filter(j => j.status === 'open' && !appliedIds.includes(j.id));
+  jobs = jobs.map(j => {
+    let score = 50;
+    if (user.preferredCategories && user.preferredCategories.includes(j.category)) score += 25;
+    if (user.skills && j.tags) {
+      const overlap = j.tags.filter(t => user.skills.some(s => t.includes(s) || s.includes(t)));
+      score += overlap.length * 8;
+    }
+    const dist = parseFloat(j.distance);
+    if (dist && dist < 2) score += 10;
+    if (j.urgent) score += 5;
+    return { ...j, matchScore: Math.min(score, 99) };
+  });
+  jobs.sort((a, b) => b.matchScore - a.matchScore);
+  return jobs.slice(0, limit || 3);
 }
