@@ -51,6 +51,7 @@ function updateNavByRole() {
   const navLogout = document.getElementById('nav-logout');
   const navApplications = document.getElementById('nav-applications');
   const navOrders = document.getElementById('nav-orders');
+  const navNotifications = document.getElementById('nav-notifications');
 
   if (navPublish) navPublish.style.display = isMerchant() ? '' : 'none';
   if (navMerchant) navMerchant.style.display = isMerchant() ? '' : 'none';
@@ -58,6 +59,8 @@ function updateNavByRole() {
   if (navOrders) navOrders.style.display = u ? '' : 'none';
   if (navLogin) navLogin.style.display = u ? 'none' : '';
   if (navLogout) navLogout.style.display = u ? '' : 'none';
+  if (navProfile) navProfile.style.display = u ? '' : 'none';
+  if (navNotifications) navNotifications.style.display = u ? '' : 'none';
 
   if (u && navProfile) {
     navProfile.textContent = u.avatar + ' ' + u.name;
