@@ -32,7 +32,7 @@
 
   <!-- ========== 首页 ========== -->
   <div id="page-home" class="page active">
-    <div class="hero">
+    <div class="hero reveal-1">
       <div>
         <h1>大学生周末兼职撮合平台</h1>
         <p>对接在校大学生与周边商家周末短期用工需求，解决商家用工信息分散、供需匹配效率低的痛点</p>
@@ -43,15 +43,15 @@
       </div>
       <div class="hero-illust">💼</div>
     </div>
-    <div class="section-title">岗位分类</div>
-    <div class="category-grid" id="category-grid"></div>
-    <div class="section-title">热门岗位</div>
-    <div class="job-grid" id="hot-jobs"></div>
+    <div class="section-title reveal-2">岗位分类</div>
+    <div class="category-grid reveal-3" id="category-grid"></div>
+    <div class="section-title reveal-4">热门岗位</div>
+    <div class="job-grid reveal-5" id="hot-jobs"></div>
   </div>
 
   <!-- ========== 岗位大厅 ========== -->
   <div id="page-jobs" class="page">
-    <div class="section-title">岗位大厅</div>
+    <div class="section-title reveal-1">岗位大厅</div>
     <div class="filter-bar">
       <div class="filter-group">
         <input class="search-input" id="job-search" placeholder="搜索岗位名称、商家..." oninput="renderJobs()">
@@ -72,7 +72,7 @@
       </div>
       <button class="btn-filter" onclick="renderJobs()">筛选</button>
     </div>
-    <div class="job-grid" id="job-list"></div>
+    <div class="job-grid reveal-2" id="job-list"></div>
   </div>
 
   <!-- ========== 岗位详情 ========== -->
@@ -82,7 +82,7 @@
 
   <!-- ========== 登录 ========== -->
   <div id="page-login" class="page">
-    <div class="auth-card">
+    <div class="auth-card reveal-1">
       <div class="auth-tabs">
         <div class="auth-tab active" onclick="switchAuthTab('login',this)">登录</div>
         <div class="auth-tab" onclick="switchAuthTab('register',this)">注册</div>
@@ -166,7 +166,7 @@
 
   <!-- ========== 发布岗位 ========== -->
   <div id="page-publish" class="page">
-    <div class="section-title">发布岗位 <span class="agent-badge">Agent辅助</span></div>
+    <div class="section-title reveal-1">发布岗位 <span class="agent-badge">Agent辅助</span></div>
     <div class="form-card">
       <div class="form-group">
         <label>岗位标题 <span class="agent-badge">Agent可补全</span></label>
@@ -241,7 +241,7 @@
 
   <!-- ========== 投递管理 ========== -->
   <div id="page-applications" class="page">
-    <div class="section-title">投递管理</div>
+    <div class="section-title reveal-1">投递管理</div>
     <div class="tabs">
       <div class="tab active" onclick="switchAppTab(this,'all')">全部</div>
       <div class="tab" onclick="switchAppTab(this,'pending')">待处理</div>
@@ -258,7 +258,7 @@
 
   <!-- ========== 订单管理 ========== -->
   <div id="page-orders" class="page">
-    <div class="section-title">订单管理</div>
+    <div class="section-title reveal-1">订单管理</div>
     <div class="table-card">
       <table>
         <thead><tr><th>订单号</th><th>岗位</th><th>对方</th><th>日期</th><th>工时</th><th>金额</th><th>状态</th><th>评价</th></tr></thead>
@@ -269,7 +269,7 @@
 
   <!-- ========== 商家面板 ========== -->
   <div id="page-merchant" class="page">
-    <div class="section-title">商家管理面板</div>
+    <div class="section-title reveal-1">商家管理面板</div>
     <div class="agent-dashboard" id="merchant-stats"></div>
     <div class="section-title" style="margin-top:24px">我的岗位</div>
     <div class="table-card" style="margin-bottom:24px">
@@ -289,7 +289,7 @@
 
   <!-- ========== Agent 面板 ========== -->
   <div id="page-agent" class="page">
-    <div class="section-title">Agent 智能辅助面板</div>
+    <div class="section-title reveal-1">Agent 智能辅助面板</div>
     <div class="agent-dashboard" id="agent-stats"></div>
     <div class="agent-log">
       <h3>📋 Agent 运行日志</h3>
@@ -299,13 +299,13 @@
 
   <!-- ========== 通知 ========== -->
   <div id="page-notifications" class="page">
-    <div class="section-title">消息通知</div>
+    <div class="section-title reveal-1">消息通知</div>
     <div id="notif-list"></div>
   </div>
 
   <!-- ========== 个人中心 ========== -->
   <div id="page-profile" class="page">
-    <div class="profile-header" id="profile-info"></div>
+    <div class="profile-header reveal-1" id="profile-info"></div>
     <div class="section-title">我的统计</div>
     <div class="agent-dashboard" id="profile-stats"></div>
     <div class="section-title">收到的评价</div>

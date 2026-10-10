@@ -1,0 +1,115 @@
+openapi: 3.0.3
+info:
+  title: 大学生周末兼职撮合平台 API
+  version: 1.0.0
+  description: C++后端交接契约 — 架构中立，前端 api.js 为唯一接缝
+
+servers:
+  - url: http://localhost:8080
+    description: 本地C++后端
+
+paths:
+  /api/auth/register:
+    post:
+      summary: 用户注册
+      request:
+        body:
+          fields: phone(string,11位), password(string,>=6), name(string), role(student|merchant), university?, major?, grade?, merchantName?, merchantAddr?
+      response:
+        200: { id: int, role: string, name: string, avatar: string }
+        400: { error: "手机号已注册" }
+
+  /api/auth/login:
+    post:
+      summary: 用户登录
+      request:
+        body: { phone: string, password: string }
+      response:
+        200: { id: int, role: string, name: string, avatar: string }
+        401: { error: "密码错误" }
+
+  /api/jobs:
+    get:
+      summary: 获取岗位列表
+      params: category?(string), sort?(default|salary-desc|distance-asc), search?(string)
+      response:
+        200: [{ id, merchantId, merchantName, title, category, salary, salaryNum, location, distance, workTime, duration, headcount, tags[], status, urgent, views, desc, requirement, benefits, createdAt }]
+    post:
+      summary: 发布岗位（触发Agent审核）
+      request:
+        body: { merchantId: int, title, category, salary, salaryNum: int, location, workTime, duration?, headcount: int, tags?, desc?, requirement?, benefits? }
+      response:
+        200: { id: int, status: open|rejected, agentStatus: approved|flagged }
+
+  /api/jobs/{id}:
+    get:
+      summary: 获取岗位详情
+      response:
+        200: { id, merchantId, merchantName, title, category, salary, salaryNum, location, distance, workTime, duration, headcount, tags[], desc, requirement, benefits, status, agentStatus, views }
+
+  /api/applications:
+    post:
+      summary: 投递岗位
+      request:
+        body: { jobId: int, studentId: int, message?: string }
+      response:
+        200: { id: int, status: "pending" }
+        409: { error: "已投递过该岗位" }
+    get:
+      summary: 查询学生投递记录
+      params: student_id(int)
+      response:
+        200: [{ id, jobId, studentName, jobTitle, merchantName, applyTime, status, statusText }]
+
+  /api/applications/{id}/status:
+    put:
+      summary: 更新投递状态（商家录用/拒绝）
+      request:
+        body: { status: accepted|rejected }
+      response:
+        200: { status: "accepted" }
+      note: 录用时自动创建订单
+
+  /api/orders:
+    get:
+      summary: 查询订单
+      params: student_id(int) 或 merchant_id(int)
+      response:
+        200: [{ id, orderNo, jobId, jobTitle, merchantName, studentName, date, hours, salary, total, status, statusText, rated }]
+
+  /api/orders/{id}/status:
+    put:
+      summary: 更新订单状态
+      request:
+        body: { status: completed|cancelled|disputed }
+
+  /api/ratings:
+    post:
+      summary: 提交评价
+      request:
+        body: { orderId: string, fromId: int, toId: int, rating: int(1-5), content?: string }
+      response:
+        200: { id: int }
+
+  /api/agent/logs:
+    get:
+      summary: 查询Agent日志
+      response:
+        200: [{ id, actionType, targetType, targetId, title, description, createdAt }]
+
+  /api/notifications:
+    get:
+      summary: 查询用户通知
+      params: user_id(int)
+      response:
+        200: [{ id, userId, type, title, content, read, time }]
+
+  /api/notifications/{id}/read:
+    put:
+      summary: 标记通知已读
+
+  /api/users/{id}:
+    get:
+      summary: 获取用户信息
+      response:
+        200: { id, phone, role, name, avatar, university?, major?, grade?, merchantName?, merchantAddr?, creditScore, createdAt }
