@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大学生周末兼职撮合平台</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: #f1f5f9; color: #1e293b; }
+  .hero { background: linear-gradient(135deg, #4F46E5, #3730A3); color: #fff; padding: 80px 24px; text-align: center; }
+  .hero h1 { font-size: 32px; margin-bottom: 12px; }
+  .hero p { font-size: 16px; opacity: 0.9; max-width: 600px; margin: 0 auto; }
+  .container { max-width: 1000px; margin: -40px auto 0; padding: 0 24px; position: relative; }
+  .card { background: #fff; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); padding: 32px; margin-bottom: 20px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .cat { background: #f8fafc; border-radius: 8px; padding: 16px; text-align: center; }
+  .cat .icon { font-size: 28px; }
+  .cat .name { font-size: 13px; font-weight: 600; margin-top: 4px; }
+  .jobs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .job { border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; }
+  .job h3 { font-size: 15px; }
+  .job .salary { color: #10B981; font-weight: 700; }
+  footer { text-align: center; padding: 24px; color: #64748b; font-size: 13px; }
+</style>
+</head>
+<body>
+  <div class="hero">
+    <h1>🎓 大学生周末兼职撮合平台</h1>
+    <p>对接在校大学生与周边商家周末短期用工需求，解决商家用工信息分散、供需匹配效率低的痛点</p>
+  </div>
+  <div class="container">
+    <div class="card">
+      <h2 style="margin-bottom:16px">岗位分类</h2>
+      <div class="grid">
+        <div class="cat"><div class="icon">🍜</div><div class="name">餐饮服务</div></div>
+        <div class="cat"><div class="icon">🛍️</div><div class="name">零售导购</div></div>
+        <div class="cat"><div class="icon">🎪</div><div class="name">活动协助</div></div>
+        <div class="cat"><div class="icon">📚</div><div class="name">家教辅导</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2 style="margin-bottom:16px">热门岗位</h2>
+      <div class="jobs">
+        <div class="job"><h3>周末咖啡厅吧台助手</h3><p style="color:#64748b;font-size:13px;margin:4px 0">蓝湾咖啡 · 0.8km · 周六周日</p><p class="salary">120元/天</p></div>
+        <div class="job"><h3>商场导购员（急招）</h3><p style="color:#64748b;font-size:13px;margin:4px 0">万达广场 · 2.3km · 周六周日</p><p class="salary">150元/天</p></div>
+        <div class="job"><h3>小学英语家教</h3><p style="color:#64748b;font-size:13px;margin:4px 0">个人雇主 · 1.5km · 周六</p><p class="salary">80元/小时</p></div>
+        <div class="job"><h3>外卖配送骑手</h3><p style="color:#64748b;font-size:13px;margin:4px 0">美团专送 · 0.5km · 周六周日</p><p class="salary">200元/天</p></div>
+      </div>
+    </div>
+  </div>
+  <footer>大学生周末兼职撮合平台 · 部署于 GitHub Pages</footer>
+</body>
+</html>
